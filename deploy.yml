@@ -1,0 +1,42 @@
+
+name: Deploy to EC2
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: SSH and deploy
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          port: 22
+          script: |
+            echo "Masuk EC2!"
+            whoami
+            pwd
+            if [ -d "/var/www/html" ]; then
+              cd /var/www/html
+              echo "Direktori saat ini: $(pwd)"
+              rm -rf ./*
+              echo "File lama dihapus"
+            else
+              echo "Error: Direktori /var/www/html tidak ditemukan!"
+              exit 1
+            fi
+            git clone https://github.com/PutriGeraldine/aws-ci-cd-demo.git tempdir
+            if [ $? -eq 0 ]; then
+              echo "Git clone berhasil"
+            else
+              echo "Error: Git clone gagal"
+              exit 1
+            fi
+            cp -r tempdir/* .
+            rm -rf tempdir
+            echo "Deployment selesai!"
